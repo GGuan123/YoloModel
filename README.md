@@ -77,6 +77,53 @@ YoloModel/
 └── LICENSE             # 许可证
 ```
 
+## 人像检测结果
+
+以下为 10 张含人物图片的 YOLOv3 检测结果（置信度阈值 0.5）。
+
+| 图片 | 检出人数 | 置信度范围 |
+|------|----------|-----------|
+| photo_01 | 1 人 | 0.826 |
+| photo_02 | 4 人 | 0.958 - 0.999 |
+| photo_03 | 11 人 | 0.511 - 0.997 |
+| photo_04 | 1 人 | 0.867 |
+| photo_05 | 0 人 | - |
+| photo_06 | 6 人 | 0.621 - 0.991 |
+| photo_07 | 2 人 | 0.765 - 0.999 |
+| photo_08 | 4 人 | 0.994 - 0.999 |
+| photo_09 | 2 人 | 0.756 - 0.997 |
+| photo_10 | 3 人 | 0.998 |
+
+### photo_01
+![photo_01](../detection_results/photo_01_detected.jpg)
+
+### photo_02
+![photo_02](../detection_results/photo_02_detected.jpg)
+
+### photo_03
+![photo_03](../detection_results/photo_03_detected.jpg)
+
+### photo_04
+![photo_04](../detection_results/photo_04_detected.jpg)
+
+### photo_05
+![photo_05](../detection_results/photo_05_detected.jpg)
+
+### photo_06
+![photo_06](../detection_results/photo_06_detected.jpg)
+
+### photo_07
+![photo_07](../detection_results/photo_07_detected.jpg)
+
+### photo_08
+![photo_08](../detection_results/photo_08_detected.jpg)
+
+### photo_09
+![photo_09](../detection_results/photo_09_detected.jpg)
+
+### photo_10
+![photo_10](../detection_results/photo_10_detected.jpg)
+
 ## 致谢
 
 - YOLOv3 原作者 Joseph Redmon 和 Ali Farhadi：[pjreddie.com/darknet/yolo](https://pjreddie.com/darknet/yolo/)
