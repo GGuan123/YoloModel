@@ -32,8 +32,6 @@ pip install opencv-python numpy
 ## 使用方法
 
 ```bash
-cd YoloModel
-
 # 检测单张图片
 python deploy_yolo.py --image 图片路径.jpg
 
@@ -124,8 +122,19 @@ YoloModel/
 ### photo_10
 ![photo_10](detection_results/photo_10_detected.jpg)
 
-## 致谢
+## 视频检测结果
 
+YOLOv3 对一段 4K 人像视频的实时检测结果（25 FPS，处理 30 帧）。
+
+<video controls width="100%">
+  <source src="../detection_results/input_video_detected.mp4" type="video/mp4">
+  您的浏览器不支持视频标签。
+</video>
+
+[下载检测结果视频](detection_results/input_video_detected.mp4)
+
+
+## 致谢
 - YOLOv3 原作者 Joseph Redmon 和 Ali Farhadi：[pjreddie.com/darknet/yolo](https://pjreddie.com/darknet/yolo/)
 - OpenCV DNN 模块提供 Darknet 模型加载支持
 - COCO 数据集提供 80 类别标签
