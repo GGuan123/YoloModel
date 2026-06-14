@@ -95,34 +95,34 @@ YoloModel/
 | photo_10 | 3 人 | 0.998 |
 
 ### photo_01
-![photo_01](../detection_results/photo_01_detected.jpg)
+![photo_01](detection_results/photo_01_detected.jpg)
 
 ### photo_02
-![photo_02](../detection_results/photo_02_detected.jpg)
+![photo_02](detection_results/photo_02_detected.jpg)
 
 ### photo_03
-![photo_03](../detection_results/photo_03_detected.jpg)
+![photo_03](detection_results/photo_03_detected.jpg)
 
 ### photo_04
-![photo_04](../detection_results/photo_04_detected.jpg)
+![photo_04](detection_results/photo_04_detected.jpg)
 
 ### photo_05
-![photo_05](../detection_results/photo_05_detected.jpg)
+![photo_05](detection_results/photo_05_detected.jpg)
 
 ### photo_06
-![photo_06](../detection_results/photo_06_detected.jpg)
+![photo_06](detection_results/photo_06_detected.jpg)
 
 ### photo_07
-![photo_07](../detection_results/photo_07_detected.jpg)
+![photo_07](detection_results/photo_07_detected.jpg)
 
 ### photo_08
-![photo_08](../detection_results/photo_08_detected.jpg)
+![photo_08](detection_results/photo_08_detected.jpg)
 
 ### photo_09
-![photo_09](../detection_results/photo_09_detected.jpg)
+![photo_09](detection_results/photo_09_detected.jpg)
 
 ### photo_10
-![photo_10](../detection_results/photo_10_detected.jpg)
+![photo_10](detection_results/photo_10_detected.jpg)
 
 ## 致谢
 
