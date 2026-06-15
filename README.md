@@ -1,6 +1,6 @@
 # YOLOv3 目标检测
 
-基于 YOLOv3 (Darknet) 和 OpenCV DNN 的实时目标检测项目，支持图片、视频和摄像头三种推理模式，纯 CPU 运行。
+基于 YOLOv3 (Darknet) 和 OpenCV DNN 的实时目标检测项目，支持图片、视频和摄像头三种推理模式。
 
 ## 功能
 
