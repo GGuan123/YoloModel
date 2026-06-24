@@ -27,6 +27,8 @@ pip install opencv-python numpy
 | `coco.names` | 621 B | 已包含在仓库中 |
 | `yolov3.weights` | 237 MB | [从 Darknet 下载](https://pjreddie.com/media/files/yolov3.weights) |
 
+| `yolov3.onnx` | 236 MB | 运行 `convert_to_onnx.py` 生成 |
+| `yolov3_int8.onnx` | 59 MB | 运行 `quantize_int8.py` 生成 |
 下载 `yolov3.weights` 后放在项目目录下，与 `yolov3.cfg` 同级即可。
 
 ## 使用方法
@@ -72,6 +74,13 @@ YoloModel/
 ├── yolov3.cfg          # Darknet 模型配置
 ├── coco.names          # 80 类 COCO 标签
 ├── yolov3.weights      # 预训练权重（需自行下载）
+├── yolov3.onnx         # FP32 ONNX 模型（运行 convert_to_onnx.py 生成）
+├── yolov3_int8.onnx    # INT8 量化模型（运行 quantize_int8.py 生成）
+├── deploy_onnx.py      # FP32 ONNX 部署脚本
+├── deploy_onnx_int8.py # INT8 量化部署脚本
+├── convert_to_onnx.py  # ONNX 模型转换脚本
+├── detection_results/     # 原始检测结果（图片 + 视频）
+├── detection_results_int8/ # INT8 检测结果
 └── LICENSE             # 许可证
 ```
 
@@ -168,6 +177,95 @@ ONNX 比 OpenCV DNN 快约 **1.2 倍**，且推理时间更稳定（标准差降
 - **跨平台推理**：同一模型可在 CPU / CUDA GPU / Apple Neural Engine 上运行
 - **加载更快**：直接反序列化，无需 Darknet 格式解析开销
 - **IR 版本说明**：导出的模型使用 IR v7、opset 11，兼容大多数 ONNX Runtime 版本
+
+## INT8 模型量化与推理优化
+
+对 FP32 ONNX 模型进行 **INT8 静态量化**，将模型大小压缩 4 倍并加速 CPU 推理。
+
+### 量化原理
+
+采用 **训练后量化（Post-Training Quantization）**，不需要任何训练或微调：
+
+```
+FP32 → INT8 仿射量化公式：
+  x_int8 = round(x_fp32 / scale) + zero_point
+  scale  = (x_max - x_min) / 255
+  zero_point = round(-x_min / scale)
+```
+
+量化分三步执行：
+
+1. **校准数据准备** — 从 `detection_results/` 取 10 张真实图片 + 40 张合成数据（正弦图案/高斯噪声），混合输入分布覆盖
+2. **激活值校准（MinMax）** — 跑 50 次前向传播，统计每层输出的 min/max → 计算 scale 和 zero_point
+3. **图重写（QDQ 格式）** — 在 Conv 算子前后插入 `QuantizeLinear` / `DequantizeLinear` 节点，权重直接转为 INT8 存储
+
+**QDQ vs QOperator 格式**：
+
+| | QOperator | QDQ |
+|---|---|---|
+| 实现 | 替换算子类型（Conv→QLinearConv） | 插入 Q/DQ 节点，算子保持标准类型 |
+| x64 CPU 性能 | 21s/帧（回退到标量实现） | 1.2s/帧（走优化 BLAS 内核） |
+| 适用场景 | 有专用硬件指令（VNNI/ARM NEON） | 通用 x64 CPU |
+
+本项目使用 **QDQ 格式**。
+
+### 量化范围
+
+**量化为 INT8 的算子**：
+- `Conv` — 权重 + 输入激活值均量化，YOLOv3 中 75 个卷积层全部受益
+
+**保留 FP32 的算子**：
+- `LeakyRelu` / `Relu` — 逐元素操作，量化收益小
+- `MaxPool` / `Add`（shortcut 连接）— 精度损失敏感
+- `Concat`（route 多尺度融合）— 多输入误差放大
+- `Resize`（上采样）— 最近邻插值
+- 三个 YOLO 检测输出头 — 需要高精度坐标回归
+
+### 使用方法
+
+```bash
+# 运行量化（需 onnxruntime >= 1.20）
+python quantize_int8.py   # 生成 yolov3_int8.onnx（约 59 MB）
+
+# INT8 推理
+python deploy_onnx_int8.py --image 图片.jpg --save
+python deploy_onnx_int8.py --webcam
+python deploy_onnx_int8.py --video 视频.mp4
+```
+
+### 推理性能对比
+
+| 模型 | 大小 | 平均延迟 | FPS | 加速比 |
+|------|------|----------|-----|--------|
+| FP32 (ONNX) | 236.2 MB | 1720 ms | 0.58 | 1.0× |
+| **INT8 (QDQ)** | **59.3 MB** | **1230 ms** | **0.81** | **1.4×** |
+
+- 模型大小压缩 **75%**（4.0×），便于部署到存储受限设备
+- 推理加速 **1.4×**，在无专用加速硬件的通用 x64 CPU 上实测
+- 精度损失预期 < 1% mAP（MinMax 校准 + 真实图片校准数据）
+
+### INT8 检测结果
+
+10 张图片 + 1 段视频的 INT8 检测结果保存在 `detection_results_int8/`：
+
+| 图片 | 耗时 | 检出数 |
+|------|------|--------|
+| photo_01 | 1373 ms | 0 |
+| photo_02 | 1013 ms | 4 |
+| photo_03 | 1178 ms | 2 |
+| photo_04 | 993 ms | 1 |
+| photo_05 | 984 ms | 0 |
+| photo_06 | 1169 ms | 6 |
+| photo_07 | 957 ms | 1 |
+| photo_08 | 852 ms | 2 |
+| photo_09 | 1067 ms | 2 |
+| photo_10 | 1052 ms | 1 |
+
+**视频**：30 帧 / 4K 分辨率，平均 844 ms/帧，输出 4.3 MB。
+
+![photo_02_int8](detection_results_int8/photo_02_int8_detected.jpg)
+![photo_06_int8](detection_results_int8/photo_06_int8_detected.jpg)
+![photo_08_int8](detection_results_int8/photo_08_int8_detected.jpg)
 
 ## 致谢
 - YOLOv3 原作者 Joseph Redmon 和 Ali Farhadi：[pjreddie.com/darknet/yolo](https://pjreddie.com/darknet/yolo/)
